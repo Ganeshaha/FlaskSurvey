@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, flash
+from flask import Flask, render_template, request, redirect, flash, session
 from flask_debugtoolbar import DebugToolbarExtension
 from surveys import *
 import pdb
@@ -8,7 +8,7 @@ app.debug=True
 app.config['SECRET_KEY'] = 'my_key'
 toolbar = DebugToolbarExtension(app)
 
-responses =[]
+
 
 @app.route('/')
 def main_page():
@@ -23,11 +23,11 @@ def questions_page(id):
         choices = satisfaction_survey.questions[int(id)].choices
 
 
-    if(int(id) == len(responses)):
+    if(int(id) == len(session['responses'])):
         
         return render_template("questions.html", question = question, choices = choices, id = id)
     
-    elif (len(satisfaction_survey.questions) == len(responses)):
+    elif (len(satisfaction_survey.questions) == len(session['responses'])):
         return render_template("thanks.html")
     else:
         flash("You are trying to access a question out of order!!!")
@@ -36,9 +36,19 @@ def questions_page(id):
 
 @app.route('/answer', methods =['POST'])
 def answer_page():
-    responses.append(request.form.keys())
-    
+    responses = session['responses']
+    responses.append(request.form)
+    session['responses'] = responses
+    #ask about this
+   
+    current_id = len(responses)
+
     if len(satisfaction_survey.questions) > len(responses):
-        return redirect(f'/questions/{len(responses)}')
+        return redirect(f"/questions/{current_id}")
     else: 
         return render_template("thanks.html")
+    
+@app.route('/newroute', methods = ['POST'])
+def new_route():
+     session["responses"] = []
+     return redirect ('/questions/0')
